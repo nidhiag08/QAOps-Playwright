@@ -1,4 +1,4 @@
-# Interview Prep – Playwright Framework
+#Playwright Framework
 
 TypeScript + Playwright framework using the Page Object Model, custom fixtures, data-driven tests and an API layer.
 
