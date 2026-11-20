@@ -1,0 +1,18 @@
+import { Page, Locator, expect } from '@playwright/test';
+
+export abstract class BasePage {
+  constructor(protected readonly page: Page) {}
+
+  async goto(path = '/') {
+    await this.page.goto(path);
+  }
+
+  async expectUrlContains(fragment: string) {
+    await expect(this.page).toHaveURL(new RegExp(fragment));
+  }
+
+  protected async fill(locator: Locator, value: string) {
+    await locator.clear();
+    await locator.fill(value);
+  }
+}
