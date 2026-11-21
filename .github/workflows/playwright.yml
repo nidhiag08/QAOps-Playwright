@@ -4,7 +4,11 @@ on:
     branches: [ main, master,septCut ]
   pull_request:
     branches: [ main, master ]
- 
+
+concurrency:
+  group: playwright-tests
+  cancel-in-progress: false
+
 jobs:
   test:
     timeout-minutes: 60
@@ -17,45 +21,43 @@ jobs:
         shardIndex: [1, 2, 3, 4]
         shardTotal: [4]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: lts/*
+          cache: npm
       - name: Install dependencies
         run: npm ci
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
- 
+        run: npx playwright install --with-deps chrome
+      - name: Create env file
+        run: cp .env.example .env.qa
+
       - name: Run Playwright tests (shard)
         run: >
-          npx playwright test --config=playwright.config.js --workers=4
+          npx playwright test
           --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
-          --reporter=blob
- 
+
       - name: Upload blob report
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: blob-report-${{ matrix.shardIndex }}
           path: blob-report/
           retention-days: 1
-      - uses: actions/upload-artifact@v7
-        if: always()
+
+      - name: Upload Allure results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
         with:
           name: allure-results-${{ matrix.shardIndex }}
           path: allure-results/
           retention-days: 1
-      - uses: actions/upload-artifact@v7
-        if: always() && inputs.update_snapshots
-        with:
-          name: snapshots-${{ matrix.shardIndex }}
-          path: tests/**/*-snapshots/
-          retention-days: 7
 
   test-result:
     name: test
-    if: always()
-    needs: test
+    if: ${{ !cancelled() }}
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - run: '[ "${{ needs.test.result }}" = "success" ]'
@@ -65,26 +67,44 @@ jobs:
     needs: [test]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: lts/*
+          cache: npm
       - name: Install dependencies
         run: npm ci
- 
+
       - name: Download blob reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: all-blob-reports
           pattern: blob-report-*
           merge-multiple: true
- 
+
       - name: Merge into HTML report
         run: npx playwright merge-reports --reporter html ./all-blob-reports
- 
+
+      - name: Download Allure results
+        uses: actions/download-artifact@v8
+        with:
+          path: allure-results
+          pattern: allure-results-*
+          merge-multiple: true
+
+      - name: Generate Allure report
+        run: npm run allure:generate
+
       - name: Upload final HTML report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: playwright-report/
+          retention-days: 30
+
+      - name: Upload Allure report
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-report
+          path: allure-report/
           retention-days: 30
