@@ -1,8 +1,7 @@
 name: Selenium Tests
+# Manual only: this repo has no Maven project (pom.xml), so running on every push always failed
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 jobs:
   test:
     runs-on: ubuntu-latest

@@ -21,8 +21,10 @@ console.log(textCheck?.split(" ")[1]);
 
 })
 
-test("screenshot and visual comparison", { tag: '@regression' }, async({page})=>
+test("screenshot and visual comparison", { tag: '@regression' }, async({page, browserName})=>
 {
+  // Baseline images are kept for Chromium only — each browser renders fonts slightly differently
+  test.skip(browserName !== 'chromium', 'visual baselines are Chromium-only');
   await page.goto('https://rahulshettyacademy.com/AutomationPractice/');
   await expect(page.locator("#displayed-text")).toBeVisible();
   //screenshot of just this element — taken before it gets hidden
@@ -34,7 +36,10 @@ test("screenshot and visual comparison", { tag: '@regression' }, async({page})=>
   await expect(page).toHaveScreenshot('screenshot.png');
 });
 
-test('visual', { tag: '@regression' }, async ({ page }) => {
+test('visual', { tag: '@regression' }, async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'visual baselines are Chromium-only');
+  // flightaware.com is a live site whose content changes constantly, so this can never match in CI
+  test.skip(!!process.env.CI, 'live third-party site; local practice only');
   await page.goto('https://flightaware.com/');
   expect(await page.screenshot()).toMatchSnapshot('landing.png');
 });

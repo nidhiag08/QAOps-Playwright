@@ -29,7 +29,10 @@ test('gmail user sees Access Denied when viewing yahoo user booking', { tag: '@r
   });
   expect(eventsRes.ok()).toBeTruthy();
   const eventsData = await eventsRes.json();
-  const eventId = eventsData.data[0].id;
+  // Pick an event that still has seats — a sold-out event makes the booking API return 400
+  const event = eventsData.data.find(e => e.availableSeats > 0);
+  expect(event, 'no event with available seats').toBeTruthy();
+  const eventId = event.id;
 
   //Create a booking via API as Yahoo user ────────────────────────
   const bookingRes = await request.post(`${API_URL}/bookings`, {
