@@ -16,7 +16,9 @@ test.beforeAll(async ({browser})=>
     await page.getByPlaceholder("email@example.com").fill("nidhiagrawal531@gmail.com");
     await page.getByPlaceholder("enter your passsword").fill("Test@1234");
     await page.getByRole('button',{name: 'Login'}).click();
-    await page.waitForLoadState('networkidle');
+    // Wait for the products to show — that proves login finished and the token is stored.
+    // networkidle alone can fire before the token is saved (seen on WebKit in CI)
+    await page.locator(".card-body b").first().waitFor();
     await context.storageState({path: 'state.json'});
 
     //new context that starts already logged in, using the saved state.json
@@ -32,8 +34,11 @@ test('@API Place Order', { tag: '@regression' }, async ()=>
 
     await page.locator(".card-body b").first().waitFor();
 
+    // Wait for the add-to-cart call to finish before opening the cart, otherwise the cart can still be empty
+    const addedToCart = page.waitForResponse(res => res.url().includes('add-to-cart'));
     await page.locator(".card-body").filter({hasText: 'ZARA COAT 3'})
     .getByRole('button', {name: "Add To Cart"}).click();
+    await addedToCart;
 
     await page.getByRole("listitem").getByRole('button', {name: "Cart"}).click();
 

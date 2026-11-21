@@ -10,6 +10,10 @@ on:
         description: 'Regenerate Linux screenshot baselines (download the "snapshots" artifact and commit it)'
         type: boolean
         default: false
+# Tests share the same practice-site accounts (cart, bookings), so never run two at once — queue instead
+concurrency:
+  group: playwright-tests
+  cancel-in-progress: false
 jobs:
   test:
     runs-on: ubuntu-latest
