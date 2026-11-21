@@ -15,8 +15,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1,
+  // In CI each shard writes a blob report; the workflow's merge job combines them into one HTML report
   reporter: [
-    ['html'],
+    process.env.CI ? ['blob'] : ['html'],
     ['allure-playwright', { resultsDir: 'allure-results' }],
   ],
   use: {
